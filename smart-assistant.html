@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Study Assistant - Student Study Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root { --sky-blue:#87CEEB; --sky-blue-light:#B0E0F6; --sky-blue-dark:#4BA3C7; --warm-yellow:#F5C842; --warm-yellow-light:#FFF0B3; --warm-yellow-dark:#D4A800; --white:#FFFFFF; --gray-50:#F9FAFB; --gray-100:#F3F4F6; --gray-200:#E5E7EB; --gray-500:#6B7280; --gray-700:#374151; --gray-900:#111827; --green:#10B981; --green-light:#D1FAE5; --red:#EF4444; --red-light:#FEE2E2; --purple:#7C3AED; --purple-light:#EDE9FE; }
+        body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--gray-900); background:var(--gray-50); line-height:1.6; display:flex; flex-direction:column; min-height:100vh; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        .navbar { background:var(--white); padding:1rem 2rem; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+        .navbar-logo { font-size:1.35rem; font-weight:700; color:var(--sky-blue-dark); white-space:nowrap; }
+        .navbar-logo span { color:var(--warm-yellow-dark); }
+        .navbar-links { display:flex; align-items:center; gap:1.5rem; }
+        .navbar-links a { font-size:0.95rem; font-weight:500; color:var(--gray-700); transition:color 0.2s; }
+        .navbar-links a:hover,.navbar-links a.active { color:var(--sky-blue-dark); }
+        .btn-login { background:var(--sky-blue-dark); color:var(--white)!important; padding:0.5rem 1.25rem; border-radius:8px; font-weight:600; }
+        .btn-login:hover { background:#3a8ab0; }
+        .hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; background:none; border:none; padding:4px; }
+        .hamburger span { display:block; width:24px; height:2.5px; background:var(--gray-700); border-radius:2px; }
+
+        .page-hero { background:linear-gradient(135deg,var(--sky-blue) 0%,var(--sky-blue-light) 50%,var(--warm-yellow-light) 100%); padding:3.5rem 2rem; text-align:center; }
+        .page-hero h1 { font-size:2.25rem; font-weight:800; margin-bottom:0.5rem; }
+        .page-hero p { font-size:1.1rem; color:var(--gray-700); max-width:550px; margin:0 auto; }
+        .page-hero i { font-size:2.5rem; color:var(--sky-blue-dark); margin-bottom:0.75rem; display:block; }
+
+        .container { max-width:900px; margin:0 auto; padding:2rem; }
+
+        /* FORM */
+        .form-card { background:var(--white); border:1px solid var(--gray-200); border-radius:14px; padding:2rem; margin-bottom:2rem; }
+        .form-card h2 { font-size:1.15rem; font-weight:700; margin-bottom:1.25rem; }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        .form-group { display:flex; flex-direction:column; }
+        .form-group label { font-size:0.82rem; font-weight:600; color:var(--gray-700); margin-bottom:0.3rem; }
+        .form-group select, .form-group input {
+            padding:0.65rem 0.85rem; border:2px solid var(--gray-200); border-radius:8px;
+            font-size:0.92rem; outline:none; transition:border-color .2s; font-family:inherit;
+        }
+        .form-group select:focus, .form-group input:focus { border-color:var(--sky-blue-dark); }
+        .form-actions { margin-top:1.25rem; }
+        .btn {
+            padding:0.7rem 2rem; border:none; border-radius:8px; font-size:0.95rem;
+            font-weight:600; cursor:pointer; transition:background .2s;
+        }
+        .btn-primary { background:var(--sky-blue-dark); color:var(--white); }
+        .btn-primary:hover { background:#3a8ab0; }
+        .btn-secondary { background:var(--gray-200); color:var(--gray-700); }
+        .btn-secondary:hover { background:var(--gray-500); color:var(--white); }
+        .btn-sm { padding:0.4rem 1rem; font-size:0.82rem; }
+
+        /* RESULTS */
+        #results { display:none; }
+        .results-header { text-align:center; margin-bottom:2rem; }
+        .results-header h2 { font-size:1.4rem; font-weight:800; margin-bottom:0.25rem; }
+        .results-header p { color:var(--gray-500); font-size:0.92rem; }
+        .query-summary {
+            display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.75rem;
+        }
+        .query-tag {
+            background:var(--sky-blue-light); color:var(--sky-blue-dark); padding:0.3rem 0.85rem;
+            border-radius:20px; font-size:0.78rem; font-weight:600;
+        }
+
+        /* SECTION CARDS */
+        .rec-section { margin-bottom:2rem; }
+        .rec-section h3 {
+            font-size:1.05rem; font-weight:700; margin-bottom:0.75rem;
+            display:flex; align-items:center; gap:0.5rem;
+        }
+        .rec-section h3 i { color:var(--sky-blue-dark); }
+
+        .rec-card {
+            background:var(--white); border:1px solid var(--gray-200); border-radius:12px;
+            padding:1rem 1.25rem; margin-bottom:0.6rem; display:flex; align-items:flex-start; gap:1rem;
+            transition:border-color .15s;
+        }
+        .rec-card:hover { border-color:var(--sky-blue-dark); }
+        .rec-icon {
+            width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+            font-size:1rem; flex-shrink:0;
+        }
+        .rec-icon.blue   { background:var(--sky-blue-light); color:var(--sky-blue-dark); }
+        .rec-icon.yellow { background:var(--warm-yellow-light); color:var(--warm-yellow-dark); }
+        .rec-icon.green  { background:var(--green-light); color:var(--green); }
+        .rec-icon.purple { background:var(--purple-light); color:var(--purple); }
+        .rec-info { flex:1; min-width:0; }
+        .rec-info h4 { font-size:0.95rem; font-weight:700; margin-bottom:0.15rem; }
+        .rec-info p { font-size:0.82rem; color:var(--gray-500); }
+        .rec-meta { display:flex; gap:0.5rem; margin-top:0.35rem; flex-wrap:wrap; }
+        .rec-badge {
+            display:inline-block; padding:0.15rem 0.55rem; border-radius:10px;
+            font-size:0.72rem; font-weight:600;
+        }
+        .badge-blue   { background:var(--sky-blue-light); color:var(--sky-blue-dark); }
+        .badge-yellow { background:var(--warm-yellow-light); color:var(--warm-yellow-dark); }
+        .badge-green  { background:var(--green-light); color:var(--green); }
+        .badge-red    { background:var(--red-light); color:var(--red); }
+        .badge-purple { background:var(--purple-light); color:var(--purple); }
+        .no-results { color:var(--gray-500); font-size:0.88rem; padding:1rem; text-align:center; font-style:italic; }
+
+        /* STUDY PLAN */
+        .plan-card {
+            background:var(--white); border:2px solid var(--warm-yellow); border-radius:14px;
+            padding:1.5rem; margin-bottom:2rem;
+        }
+        .plan-card h3 { font-size:1.1rem; font-weight:700; margin-bottom:0.25rem; display:flex; align-items:center; gap:0.5rem; }
+        .plan-card h3 i { color:var(--warm-yellow-dark); }
+        .plan-subtitle { font-size:0.82rem; color:var(--gray-500); margin-bottom:1.25rem; }
+
+        .plan-timeline { position:relative; padding-left:2rem; }
+        .plan-timeline::before {
+            content:""; position:absolute; left:15px; top:8px; bottom:8px;
+            width:3px; background:var(--warm-yellow-light); border-radius:2px;
+        }
+        .plan-step {
+            position:relative; margin-bottom:1.25rem; padding-left:0.5rem;
+        }
+        .plan-step:last-child { margin-bottom:0; }
+        .plan-dot {
+            position:absolute; left:-2rem; top:0.35rem;
+            width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+            font-size:0.8rem; font-weight:700; color:var(--white); z-index:1;
+        }
+        .plan-dot.blue   { background:var(--sky-blue-dark); }
+        .plan-dot.yellow { background:var(--warm-yellow-dark); }
+        .plan-dot.green  { background:var(--green); }
+        .plan-dot.purple { background:var(--purple); }
+        .plan-step-header { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.2rem; }
+        .plan-step-header h4 { font-size:0.95rem; font-weight:700; }
+        .plan-time { font-size:0.78rem; font-weight:600; color:var(--warm-yellow-dark); background:var(--warm-yellow-light); padding:0.15rem 0.6rem; border-radius:10px; }
+        .plan-step p { font-size:0.82rem; color:var(--gray-500); }
+        .plan-step .plan-resource { font-size:0.8rem; color:var(--sky-blue-dark); font-weight:600; margin-top:0.15rem; }
+        .plan-tip {
+            margin-top:0.35rem; font-size:0.78rem; color:var(--gray-500);
+            padding:0.35rem 0.6rem; background:var(--gray-50); border-radius:6px;
+            border-left:3px solid var(--warm-yellow);
+        }
+
+        .empty-msg { text-align:center; color:var(--gray-500); font-size:0.9rem; padding:2rem 1rem; }
+
+        .footer { background:var(--gray-900); color:var(--gray-200); padding:3rem 2rem; margin-top:auto; }
+        .footer-inner { max-width:900px; margin:0 auto; display:grid; grid-template-columns:2fr 1fr 1fr; gap:2rem; }
+        .footer-brand h3 { font-size:1.2rem; font-weight:700; color:var(--white); margin-bottom:0.5rem; }
+        .footer-brand h3 span { color:var(--warm-yellow); }
+        .footer-brand p { font-size:0.9rem; color:var(--gray-500); line-height:1.6; }
+        .footer-col h4 { font-size:0.95rem; font-weight:600; color:var(--white); margin-bottom:0.75rem; }
+        .footer-col ul li { margin-bottom:0.4rem; }
+        .footer-col ul li a { font-size:0.9rem; color:var(--gray-500); transition:color 0.2s; }
+        .footer-col ul li a:hover { color:var(--warm-yellow); }
+        .footer-bottom { max-width:900px; margin:2rem auto 0; padding-top:1.5rem; border-top:1px solid #374151; text-align:center; font-size:0.85rem; color:var(--gray-500); }
+
+        @media(max-width:768px) {
+            .navbar-links { display:none; flex-direction:column; position:absolute; top:100%; left:0; right:0; background:var(--white); padding:1rem 2rem; box-shadow:0 4px 12px rgba(0,0,0,0.1); gap:0.75rem; align-items:flex-start; }
+            .navbar-links.active { display:flex; }
+            .hamburger { display:flex; }
+            .footer-inner { grid-template-columns:1fr; gap:1.5rem; }
+            .page-hero { padding:2.5rem 1.25rem; }
+            .page-hero h1 { font-size:1.75rem; }
+            .container { padding:1.25rem; }
+            .form-grid { grid-template-columns:1fr; }
+            .plan-timeline { padding-left:1.5rem; }
+            .plan-dot { left:-1.5rem; width:28px; height:28px; font-size:0.7rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="navbar-logo">Student Study <span>Hub</span></a>
+        <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+        <div class="navbar-links">
+            <a href="index.html">Home</a>
+            <a href="subjects.html">Subjects</a>
+            <a href="study-materials.html">Study Materials</a>
+            <a href="past-questions.html">Past Questions</a>
+            <a href="quizzes.html">Quizzes</a>
+            <a href="timetable.html">Timetable</a>
+            <a href="login.html" class="btn-login">Login</a>
+        </div>
+    </nav>
+
+    <section class="page-hero">
+        <i class="fas fa-wand-magic-sparkles"></i>
+        <h1>Smart Study Assistant</h1>
+        <p>Tell us what you want to study and how much time you have. We'll build the perfect plan for you.</p>
+    </section>
+
+    <div class="container">
+        <div class="form-card" id="assistantForm">
+            <h2><i class="fas fa-sliders"></i> What do you want to study?</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fSubject">Subject</label>
+                    <select id="fSubject">
+                        <option value="">— Select Subject —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fTopic">Topic</label>
+                    <select id="fTopic">
+                        <option value="">— Select Subject first —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fLevel">Level</label>
+                    <select id="fLevel">
+                        <option value="">— Select Level —</option>
+                        <option value="SS1">SS1 (Beginner)</option>
+                        <option value="SS2">SS2 (Intermediate)</option>
+                        <option value="SS3">SS3 (Advanced)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fTime">Available Study Time</label>
+                    <select id="fTime">
+                        <option value="30">30 minutes</option>
+                        <option value="60" selected>1 hour</option>
+                        <option value="90">1.5 hours</option>
+                        <option value="120">2 hours</option>
+                        <option value="150">2.5 hours</option>
+                        <option value="180">3 hours</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="generatePlan()"><i class="fas fa-wand-magic-sparkles"></i> Generate Study Plan</button>
+            </div>
+        </div>
+
+        <div id="results">
+            <div class="results-header">
+                <h2>Your Personalized Study Plan</h2>
+                <p>Here's what we recommend based on your selection.</p>
+                <div class="query-summary" id="querySummary"></div>
+            </div>
+
+            <div class="plan-card" id="planCard">
+                <h3><i class="fas fa-calendar-check"></i> Suggested Study Plan</h3>
+                <p class="plan-subtitle" id="planSubtitle"></p>
+                <div class="plan-timeline" id="planTimeline"></div>
+            </div>
+
+            <div class="rec-section" id="matSection">
+                <h3><i class="fas fa-book-open"></i> Recommended Materials</h3>
+                <div id="matResults"></div>
+            </div>
+
+            <div class="rec-section" id="pqSection">
+                <h3><i class="fas fa-file-lines"></i> Recommended Past Questions</h3>
+                <div id="pqResults"></div>
+            </div>
+
+            <div class="rec-section" id="quizSection">
+                <h3><i class="fas fa-circle-question"></i> Recommended Quiz</h3>
+                <div id="quizResults"></div>
+            </div>
+
+            <div style="text-align:center;margin-top:1rem;">
+                <button class="btn btn-secondary" onclick="resetForm()"><i class="fas fa-arrow-left"></i> Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand"><h3>Student Study <span>Hub</span></h3><p>Your all-in-one platform to find study materials, practice past questions, take quizzes, and organize your studies.</p></div>
+            <div class="footer-col"><h4>About</h4><ul><li><a href="#">Our Mission</a></li><li><a href="#">How It Works</a></li><li><a href="#">FAQs</a></li></ul></div>
+            <div class="footer-col"><h4>Quick Links</h4><ul><li><a href="subjects.html">Subjects</a></li><li><a href="study-materials.html">Study Materials</a></li><li><a href="past-questions.html">Past Questions</a></li><li><a href="quizzes.html">Quizzes</a></li><li><a href="timetable.html">Timetable</a></li></ul></div>
+        </div>
+        <div class="footer-bottom">&copy; 2026 Student Study Hub. All rights reserved.</div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/assistant.js"></script>
+    <script>SSH.autoInit();</script>
+    <script>
+    (function () {
+        /* --- populate subject dropdown from DB --- */
+        var subjects = SSH.getAllSubjects();
+        var fSubject = document.getElementById("fSubject");
+        for (var i = 0; i < subjects.length; i++) {
+            var opt = document.createElement("option");
+            opt.value = subjects[i].name;
+            opt.textContent = subjects[i].name;
+            fSubject.appendChild(opt);
+        }
+
+        /* --- dynamically populate topics when subject changes --- */
+        fSubject.addEventListener("change", function () {
+            var fTopic = document.getElementById("fTopic");
+            fTopic.innerHTML = '<option value="">— All Topics —</option>';
+            if (!fSubject.value) {
+                fTopic.innerHTML = '<option value="">— Select Subject first —</option>';
+                return;
+            }
+            var topics = SSH.getTopicsForSubject(fSubject.value);
+            for (var i = 0; i < topics.length; i++) {
+                var opt = document.createElement("option");
+                opt.value = topics[i];
+                opt.textContent = topics[i];
+                fTopic.appendChild(opt);
+            }
+        });
+
+        /* --- escape helper --- */
+        function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+        function minsLabel(m) {
+            if (m >= 60) {
+                var h = Math.floor(m / 60);
+                var rem = m % 60;
+                return h + "h" + (rem ? " " + rem + "m" : "");
+            }
+            return m + " min";
+        }
+
+        /* --- generate plan --- */
+        window.generatePlan = function () {
+            var subject = fSubject.value;
+            var topic   = document.getElementById("fTopic").value;
+            var level   = document.getElementById("fLevel").value;
+            var time    = document.getElementById("fTime").value;
+
+            if (!subject) { alert("Please select a subject."); return; }
+
+            var result = SSH.getRecommendations({
+                subject:     subject,
+                topic:       topic,
+                level:       level,
+                timeMinutes: parseInt(time)
+            });
+
+            renderResults(result);
+        };
+
+        function renderResults(r) {
+            document.getElementById("assistantForm").style.display = "none";
+            document.getElementById("results").style.display = "block";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+
+            /* query summary */
+            var q = r.query;
+            var tags = '<span class="query-tag"><i class="fas fa-book"></i> ' + esc(q.subject) + '</span>';
+            if (q.topic) tags += '<span class="query-tag"><i class="fas fa-tag"></i> ' + esc(q.topic) + '</span>';
+            if (q.level) tags += '<span class="query-tag"><i class="fas fa-signal"></i> ' + esc(q.level) + '</span>';
+            tags += '<span class="query-tag"><i class="fas fa-clock"></i> ' + minsLabel(q.timeMinutes) + '</span>';
+            document.getElementById("querySummary").innerHTML = tags;
+
+            /* study plan */
+            var plan = r.studyPlan;
+            var totalMin = q.timeMinutes;
+            document.getElementById("planSubtitle").textContent =
+                "A " + minsLabel(totalMin) + " session tailored for " + q.subject + (q.topic ? " — " + q.topic : "");
+
+            var dotColors = ["blue", "yellow", "green", "purple"];
+            var planHtml = "";
+            for (var i = 0; i < plan.length; i++) {
+                var p = plan[i];
+                var dc = dotColors[i % dotColors.length];
+                planHtml += '<div class="plan-step">' +
+                    '<div class="plan-dot ' + dc + '">' + (i + 1) + '</div>' +
+                    '<div class="plan-step-header">' +
+                        '<h4>' + esc(p.label) + '</h4>' +
+                        '<span class="plan-time"><i class="fas fa-clock"></i> ' + minsLabel(p.duration) + '</span>' +
+                    '</div>' +
+                    (p.detail ? '<div class="plan-resource"><i class="fas fa-arrow-right"></i> ' + esc(p.detail) + '</div>' : '') +
+                    '<p>' + esc(p.tip || '') + '</p>' +
+                '</div>';
+            }
+            document.getElementById("planTimeline").innerHTML = planHtml;
+
+            /* materials */
+            renderMaterialCards(r.materials);
+
+            /* past questions */
+            renderPQCards(r.pastQuestions);
+
+            /* quiz */
+            renderQuizCard(r.quiz);
+        }
+
+        function renderMaterialCards(mats) {
+            var wrap = document.getElementById("matResults");
+            if (!mats.length) {
+                wrap.innerHTML = '<div class="no-results"><i class="fas fa-info-circle"></i> No matching materials found. Try a different topic or ask your admin to add materials.</div>';
+                return;
+            }
+            var html = "";
+            for (var i = 0; i < mats.length; i++) {
+                var m = mats[i];
+                var typeClass = m.type === "Video" ? "badge-green" : m.type === "PDF" ? "badge-red" : "badge-blue";
+                html += '<div class="rec-card">' +
+                    '<div class="rec-icon blue"><i class="fas fa-book-open"></i></div>' +
+                    '<div class="rec-info">' +
+                        '<h4>' + esc(m.title) + '</h4>' +
+                        '<p>' + esc(m.description) + '</p>' +
+                        '<div class="rec-meta">' +
+                            '<span class="rec-badge badge-blue">' + esc(m.subject) + '</span>' +
+                            '<span class="rec-badge badge-yellow">' + esc(m.topic) + '</span>' +
+                            '<span class="rec-badge ' + typeClass + '">' + esc(m.type) + '</span>' +
+                            '<span class="rec-badge badge-purple">' + esc(m.level) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            wrap.innerHTML = html;
+        }
+
+        function renderPQCards(pqs) {
+            var wrap = document.getElementById("pqResults");
+            if (!pqs.length) {
+                wrap.innerHTML = '<div class="no-results"><i class="fas fa-info-circle"></i> No matching past questions found. Try broadening your topic search.</div>';
+                return;
+            }
+            var html = "";
+            for (var i = 0; i < pqs.length; i++) {
+                var p = pqs[i];
+                html += '<div class="rec-card">' +
+                    '<div class="rec-icon yellow"><i class="fas fa-file-lines"></i></div>' +
+                    '<div class="rec-info">' +
+                        '<h4>' + esc(p.title) + '</h4>' +
+                        '<p>' + esc(p.description) + '</p>' +
+                        '<div class="rec-meta">' +
+                            '<span class="rec-badge badge-blue">' + esc(p.subject) + '</span>' +
+                            '<span class="rec-badge badge-yellow">' + esc(p.examType) + '</span>' +
+                            '<span class="rec-badge badge-green">' + esc(p.session) + '</span>' +
+                            '<span class="rec-badge badge-purple">' + esc(p.level) + '</span>' +
+                            '<span class="rec-badge badge-red">' + p.questionCount + ' questions</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            wrap.innerHTML = html;
+        }
+
+        function renderQuizCard(quiz) {
+            var wrap = document.getElementById("quizResults");
+            if (!quiz) {
+                wrap.innerHTML = '<div class="no-results"><i class="fas fa-info-circle"></i> No matching quiz found. Try a different subject or topic.</div>';
+                return;
+            }
+            wrap.innerHTML = '<div class="rec-card">' +
+                '<div class="rec-icon green"><i class="fas fa-circle-question"></i></div>' +
+                '<div class="rec-info">' +
+                    '<h4>' + esc(quiz.title) + '</h4>' +
+                    '<p>' + esc(quiz.description) + '</p>' +
+                    '<div class="rec-meta">' +
+                        '<span class="rec-badge badge-blue">' + esc(quiz.subject) + '</span>' +
+                        '<span class="rec-badge badge-green">' + quiz.questionCount + ' questions</span>' +
+                    '</div>' +
+                    '<a href="quizzes.html" style="display:inline-block;margin-top:0.5rem;font-size:0.82rem;color:var(--sky-blue-dark);font-weight:600;">Start this quiz <i class="fas fa-arrow-right"></i></a>' +
+                '</div>' +
+            '</div>';
+        }
+
+        window.resetForm = function () {
+            document.getElementById("assistantForm").style.display = "block";
+            document.getElementById("results").style.display = "none";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+    })();
+    </script>
+</body>
+</html>

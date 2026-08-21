@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Quizzes - Student Study Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .question-block { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:10px; padding:1rem; margin-bottom:0.75rem; }
+        .question-block h4 { font-size:0.85rem; font-weight:700; margin-bottom:0.5rem; }
+        .opt-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.5rem; }
+        .opt-grid label { font-size:0.78rem; font-weight:600; color:var(--gray-700); display:flex; align-items:center; gap:0.4rem; }
+        .opt-grid input[type="text"] { flex:1; padding:0.4rem 0.6rem; border:1px solid var(--gray-200); border-radius:6px; font-size:0.85rem; }
+        .opt-grid input[type="radio"] { accent-color:var(--sky-blue-dark); }
+        .btn-add-q { margin-top:0.5rem; }
+        #questionsWrap .question-block .remove-q { float:right; background:var(--red-light); color:var(--red); border:none; border-radius:4px; padding:0.15rem 0.5rem; font-size:0.75rem; cursor:pointer; }
+        @media(max-width:600px){ .opt-grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    <div class="sidebar-overlay" id="adminOverlay"></div>
+    <aside class="sidebar" id="adminSidebar"></aside>
+
+    <div class="main">
+        <header class="topbar">
+            <h1>Manage Quizzes</h1>
+            <div class="topbar-right">
+                <span class="admin-badge"><i class="fas fa-shield-halved"></i> Admin</span>
+                <span id="adminName"></span>
+                <button class="btn-logout" onclick="SSH.logout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </header>
+        <div class="content">
+            <div class="form-card">
+                <h2 id="formTitle">Add Quiz</h2>
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label for="fTitle">Quiz Title</label>
+                        <input type="text" id="fTitle" placeholder="e.g. Mathematics Quiz">
+                    </div>
+                    <div class="form-group">
+                        <label for="fSubject">Subject</label>
+                        <select id="fSubject"></select>
+                    </div>
+                    <div class="form-group full">
+                        <label for="fDesc">Description</label>
+                        <textarea id="fDesc" placeholder="Brief description of the quiz"></textarea>
+                    </div>
+                </div>
+                <h2 style="margin-top:1rem;">Questions</h2>
+                <div id="questionsWrap"></div>
+                <button class="btn btn-cancel btn-add-q" onclick="addQuestionBlock()"><i class="fas fa-plus"></i> Add Question</button>
+                <div class="form-actions" style="margin-top:1rem;">
+                    <button class="btn btn-primary" id="btnSave" onclick="saveQuiz()">Add Quiz</button>
+                    <button class="btn btn-cancel" id="btnCancel" onclick="cancelEdit()" style="display:none">Cancel</button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Title</th><th>Subject</th><th>Questions</th><th>Actions</th></tr></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+    (function () {
+        if (!SSH.initAdmin()) return;
+        var editId = null;
+        var qIdx = 0;
+
+        document.getElementById("fSubject").innerHTML = SSH.getSubjectOptions();
+
+        window.addQuestionBlock = function () {
+            qIdx++;
+            var wrap = document.getElementById("questionsWrap");
+            var div = document.createElement("div");
+            div.className = "question-block";
+            div.id = "qb_" + qIdx;
+            div.innerHTML =
+                '<button class="remove-q" onclick="removeQ(this)">x</button>' +
+                '<h4>Question ' + qIdx + '</h4>' +
+                '<div class="form-group" style="margin-bottom:0.5rem"><input type="text" class="q-text" placeholder="Enter question text"></div>' +
+                '<div class="opt-grid">' +
+                    '<label><input type="radio" name="correct_' + qIdx + '" value="0" checked><input type="text" class="q-opt" placeholder="Option A"></label>' +
+                    '<label><input type="radio" name="correct_' + qIdx + '" value="1"><input type="text" class="q-opt" placeholder="Option B"></label>' +
+                    '<label><input type="radio" name="correct_' + qIdx + '" value="2"><input type="text" class="q-opt" placeholder="Option C"></label>' +
+                    '<label><input type="radio" name="correct_' + qIdx + '" value="3"><input type="text" class="q-opt" placeholder="Option D"></label>' +
+                '</div>';
+            wrap.appendChild(div);
+        };
+
+        window.removeQ = function (btn) {
+            btn.parentElement.remove();
+        };
+
+        function gatherQuestions() {
+            var blocks = document.querySelectorAll(".question-block");
+            var questions = [];
+            for (var i = 0; i < blocks.length; i++) {
+                var text = blocks[i].querySelector(".q-text").value.trim();
+                var opts = blocks[i].querySelectorAll(".q-opt");
+                var options = [];
+                for (var j = 0; j < opts.length; j++) {
+                    options.push(opts[j].value.trim());
+                }
+                var radios = blocks[i].querySelectorAll("input[type=radio]");
+                var correct = 0;
+                for (var k = 0; k < radios.length; k++) {
+                    if (radios[k].checked) { correct = parseInt(radios[k].value); break; }
+                }
+                if (text && options.length === 4 && options[0] && options[1] && options[2] && options[3]) {
+                    questions.push({ text:text, options:options, correctIndex:correct });
+                }
+            }
+            return questions;
+        }
+
+        window.saveQuiz = function () {
+            var title   = document.getElementById("fTitle").value.trim();
+            var subject = document.getElementById("fSubject").value;
+            var desc    = document.getElementById("fDesc").value.trim();
+            if (!title)   { alert("Please enter a quiz title."); return; }
+            if (!subject) { alert("Please select a subject."); return; }
+
+            var questions = gatherQuestions();
+            if (!questions.length) { alert("Please add at least one complete question with 4 options."); return; }
+
+            if (editId) {
+                SSH.updateQuiz(editId, { title:title, subject:subject, description:desc, questionCount:questions.length });
+                SSH.deleteQuizQuestions(editId);
+                for (var i = 0; i < questions.length; i++) {
+                    SSH.addQuizQuestion(editId, questions[i]);
+                }
+                editId = null;
+                document.getElementById("formTitle").textContent = "Add Quiz";
+                document.getElementById("btnSave").textContent = "Add Quiz";
+                document.getElementById("btnCancel").style.display = "none";
+            } else {
+                var quiz = SSH.addQuiz({ title:title, subject:subject, description:desc, questionCount:questions.length });
+                for (var i = 0; i < questions.length; i++) {
+                    SSH.addQuizQuestion(quiz.id, questions[i]);
+                }
+            }
+            clearForm();
+            renderTable();
+        };
+
+        window.editQuiz = function (id) {
+            var q = SSH.getQuizById(id);
+            if (!q) return;
+            document.getElementById("fTitle").value = q.title;
+            document.getElementById("fSubject").value = q.subject;
+            document.getElementById("fDesc").value = q.description;
+            document.getElementById("questionsWrap").innerHTML = "";
+            var questions = SSH.getQuizQuestions(id);
+            qIdx = 0;
+            for (var i = 0; i < questions.length; i++) {
+                qIdx++;
+                var qq = questions[i];
+                var wrap = document.getElementById("questionsWrap");
+                var div = document.createElement("div");
+                div.className = "question-block";
+                div.id = "qb_" + qIdx;
+                var optsHtml = '';
+                for (var j = 0; j < qq.options.length; j++) {
+                    var checked = qq.correctIndex === j ? " checked" : "";
+                    optsHtml += '<label><input type="radio" name="correct_' + qIdx + '" value="' + j + '"' + checked + '><input type="text" class="q-opt" placeholder="Option ' + "ABCD"[j] + '" value="' + SSH.escAttr(qq.options[j]) + '"></label>';
+                }
+                div.innerHTML =
+                    '<button class="remove-q" onclick="removeQ(this)">x</button>' +
+                    '<h4>Question ' + qIdx + '</h4>' +
+                    '<div class="form-group" style="margin-bottom:0.5rem"><input type="text" class="q-text" placeholder="Enter question text" value="' + SSH.escAttr(qq.text) + '"></div>' +
+                    '<div class="opt-grid">' + optsHtml + '</div>';
+                wrap.appendChild(div);
+            }
+            editId = id;
+            document.getElementById("formTitle").textContent = "Edit Quiz";
+            document.getElementById("btnSave").textContent = "Update Quiz";
+            document.getElementById("btnCancel").style.display = "inline-block";
+            window.scrollTo({ top:0, behavior:"smooth" });
+        };
+
+        window.deleteQuiz = function (id) {
+            if (!confirm("Delete this quiz and all its questions?")) return;
+            SSH.deleteQuizQuestions(id);
+            SSH.deleteQuiz(id);
+            if (editId === id) cancelEdit();
+            renderTable();
+        };
+
+        window.cancelEdit = function () {
+            editId = null;
+            document.getElementById("formTitle").textContent = "Add Quiz";
+            document.getElementById("btnSave").textContent = "Add Quiz";
+            document.getElementById("btnCancel").style.display = "none";
+            clearForm();
+        };
+
+        function clearForm() {
+            document.getElementById("fTitle").value = "";
+            document.getElementById("fSubject").value = "";
+            document.getElementById("fDesc").value = "";
+            document.getElementById("questionsWrap").innerHTML = "";
+            qIdx = 0;
+        }
+
+        window.renderTable = function () {
+            var all = SSH.getAllQuizzes();
+            var tbody = document.getElementById("tableBody");
+            if (!all.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">No quizzes found.</td></tr>';
+                return;
+            }
+            var html = "";
+            for (var i = 0; i < all.length; i++) {
+                var q = all[i];
+                html += '<tr><td><strong>' + SSH.esc(q.title) + '</strong></td>' +
+                    '<td>' + SSH.esc(q.subject) + '</td>' +
+                    '<td><span class="badge badge-blue">' + q.questionCount + ' questions</span></td>' +
+                    '<td class="actions">' +
+                        '<button class="btn btn-primary btn-sm" onclick="editQuiz(\'' + q.id + '\')"><i class="fas fa-pen"></i></button>' +
+                        '<button class="btn btn-danger btn-sm" onclick="deleteQuiz(\'' + q.id + '\')"><i class="fas fa-trash"></i></button>' +
+                    '</td></tr>';
+            }
+            tbody.innerHTML = html;
+        };
+
+        renderTable();
+    })();
+    </script>
+</body>
+</html>

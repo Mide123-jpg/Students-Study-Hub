@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Student Study Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    <div class="sidebar-overlay" id="adminOverlay"></div>
+
+    <aside class="sidebar" id="adminSidebar"></aside>
+
+    <div class="main">
+        <header class="topbar">
+            <h1>Dashboard</h1>
+            <div class="topbar-right">
+                <span class="admin-badge"><i class="fas fa-shield-halved"></i> Admin</span>
+                <span id="adminName"></span>
+                <button class="btn-logout" onclick="SSH.logout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </header>
+        <div class="content">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="form-card">
+                <h2>Quick Links</h2>
+                <div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.5rem;">
+                    <a href="admin-subjects.html" class="btn btn-primary btn-sm"><i class="fas fa-book-open"></i> Manage Subjects</a>
+                    <a href="admin-materials.html" class="btn btn-primary btn-sm"><i class="fas fa-layer-group"></i> Manage Materials</a>
+                    <a href="admin-past-questions.html" class="btn btn-primary btn-sm"><i class="fas fa-file-lines"></i> Manage Past Questions</a>
+                    <a href="admin-quizzes.html" class="btn btn-primary btn-sm"><i class="fas fa-circle-question"></i> Manage Quizzes</a>
+                    <a href="admin-students.html" class="btn btn-primary btn-sm"><i class="fas fa-users"></i> View Students</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+    (function () {
+        if (!SSH.initAdmin()) return;
+        var stats = SSH.getAdminStats();
+        var cards = [
+            { icon:"fa-users",          color:"blue",   val:stats.students,      label:"Students" },
+            { icon:"fa-book-open",      color:"yellow", val:stats.subjects,      label:"Subjects" },
+            { icon:"fa-layer-group",    color:"green",  val:stats.materials,     label:"Materials" },
+            { icon:"fa-file-lines",     color:"red",    val:stats.pastQuestions,  label:"Past Questions" },
+            { icon:"fa-circle-question",color:"purple", val:stats.quizzes,       label:"Quizzes" }
+        ];
+        var html = "";
+        for (var i = 0; i < cards.length; i++) {
+            var c = cards[i];
+            html += '<div class="stat-card">' +
+                '<div class="stat-icon ' + c.color + '"><i class="fas ' + c.icon + '"></i></div>' +
+                '<div class="stat-info"><h3>' + c.val + '</h3><p>' + c.label + '</p></div></div>';
+        }
+        document.getElementById("statsGrid").innerHTML = html;
+    })();
+    </script>
+</body>
+</html>
