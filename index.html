@@ -118,6 +118,24 @@
             display: inline-block;
         }
         .btn-secondary:hover { background: var(--sky-blue-light); transform: translateY(-1px); }
+        .btn-rating {
+            background: var(--white);
+            color: var(--warm-yellow-dark);
+            padding: 0.85rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 2px solid var(--warm-yellow);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s, color 0.2s, border-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-rating:hover { background: var(--warm-yellow-light); transform: translateY(-1px); }
+        .btn-rating.rated { background: var(--warm-yellow); color: var(--gray-900); border-color: var(--warm-yellow); }
+        .btn-rating.rated:hover { background: var(--warm-yellow-dark); }
+        .rating-count { font-size: 0.95rem; }
 
         /* SECTIONS */
         .section { padding: 4rem 2rem; }
@@ -276,6 +294,11 @@
         <div class="hero-buttons">
             <a href="study-materials.html" class="btn-primary">Explore Materials</a>
             <a href="quizzes.html" class="btn-secondary">Take a Quiz</a>
+            <button class="btn-rating" id="heroRatingBtn" onclick="toggleHeroRating()">
+                <i class="fa-star" id="heroRatingIcon"></i>
+                <span>Rate</span>
+                <span class="rating-count" id="heroRatingCount">0</span>
+            </button>
         </div>
     </section>
 
@@ -376,5 +399,31 @@
     <script src="js/auth.js"></script>
     <script src="js/ui.js"></script>
     <script>SSH.autoInit();</script>
+    <script>
+    (function () {
+        var btn = document.getElementById("heroRatingBtn");
+        var icon = document.getElementById("heroRatingIcon");
+        var countEl = document.getElementById("heroRatingCount");
+        if (!btn || !icon || !countEl) return;
+
+        function refresh() {
+            var count = SSH.getRatingCount();
+            var uid = SSH.currentUserId();
+            var rated = uid ? SSH.hasUserRated(uid) : false;
+            countEl.textContent = count;
+            icon.className = rated ? "fa-solid fa-star" : "fa-regular fa-star";
+            btn.classList.toggle("rated", rated);
+        }
+
+        window.toggleHeroRating = function () {
+            var uid = SSH.currentUserId();
+            if (!uid) { alert("Please log in to rate."); return; }
+            var result = SSH.toggleRating(uid);
+            refresh();
+        };
+
+        refresh();
+    })();
+    </script>
 </body>
 </html>
